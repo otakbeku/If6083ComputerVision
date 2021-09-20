@@ -54,6 +54,42 @@ class MODEL(Structure):
 
 (LINEAR, LOGISTIC, RELU, LRELU, SOFTMAX) = range(5)
 
+# Bagian RGB to HCL
+rgb_to_xyz = lib.rgb_to_xyz
+rgb_to_xyz.argtypes = [IMAGE]
+rgb_to_xyz.restype = None
+
+xyz_to_luv = lib.xyz_to_luv
+xyz_to_luv.argtypes = [IMAGE]
+xyz_to_luv.restype = None
+
+luv_to_hcl = lib.luv_to_hcl
+luv_to_hcl.argtypes = [IMAGE]
+luv_to_hcl.restype = None
+
+rgb_to_hcl = lib.rgb_to_hcl
+rgb_to_hcl.argtypes = [IMAGE]
+rgb_to_hcl.restype = None
+# END
+
+# Bagian HCL to RGB
+hcl_to_luv = lib.hcl_to_luv
+hcl_to_luv.argtypes = [IMAGE]
+hcl_to_luv.restype = None
+
+luv_to_xyz = lib.luv_to_xyz
+luv_to_xyz.argtypes = [IMAGE]
+luv_to_xyz.restype = None
+
+xyz_to_rgb = lib.xyz_to_rgb
+xyz_to_rgb.argtypes = [IMAGE]
+xyz_to_rgb.restype = None
+
+hcl_to_rgb = lib.hcl_to_rgb
+hcl_to_rgb.argtypes = [IMAGE]
+hcl_to_rgb.restype = None
+# END
+
 
 add_image = lib.add_image
 add_image.argtypes = [IMAGE, IMAGE]
