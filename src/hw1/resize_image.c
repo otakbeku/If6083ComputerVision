@@ -24,37 +24,14 @@ image nn_resize(image im, int w, int h)
     */
 
     image resized_img = make_image(w, h, im.c);
-    // float ax = (float)im.w/w;
-    // float bx = 0.5*ax - 0.5;
-    // float ay = (float)im.h/h;
-
     // Buat mengecek nilai input lebih besar dari image atau nggak
     float ratio_x = 0.0;
     float ratio_y = 0.0;
-    if (w < im.w)
-    {
-        ratio_x = (float)im.w / w;
-    }
-    else
-    {
-        ratio_x = (float)w / im.w;
-    }
 
-    if (h < im.h)
-    {
-        ratio_y = (float)im.h / h;
-    }
-    else
-    {
-        ratio_y = (float)h / im.h;
-    }
-
+    ratio_x = (float)im.w / w;
+    ratio_y = (float)im.h / h;
     float bx = 0.5 * ratio_x - 0.5;
     float by = 0.5 * ratio_y - 0.5;
-
-    // printf("resize: (%d, %d) -> (%d, %d)\n", im.w, im.h, w, h);
-    // printf("ratio x: %f\n", ratio_x);
-    // printf("ratio y: %f\n", ratio_y);
 
     for (int c = 0; c < im.c; ++c)
     {
@@ -64,7 +41,7 @@ image nn_resize(image im, int w, int h)
             {
                 float interpolasi_x = ratio_x * x + bx;
                 float interpolasi_y = ratio_y * y + by;
-                set_pixel(resized_img, y, x, c, nn_interpolate(im, interpolasi_x, interpolasi_y, c));
+                set_pixel(resized_img, x, y, c, nn_interpolate(im, interpolasi_x, interpolasi_y, c));
             }
         }
     }
@@ -73,16 +50,12 @@ image nn_resize(image im, int w, int h)
 
 float bilinear_interpolate(image im, float x, float y, int c)
 {
-    
-    // int x1 = round(x) - 0.5;
-    // int x2 = round(x) + 0.5;
-    // int y1 = round(y) - 0.5;
-    // int y2 = round(y) + 0.5;
-    int x1 = x - 0.5;
-    int x2 = x + 0.5;
-    int y1 = y - 0.5;
-    int y2 = y + 0.5;
-    
+    // somehow this one is works flawlessly
+    float x1 = floorf(x);
+    float x2 = ceilf(x);
+    float y1 = floorf(y);
+    float y2 = ceilf(y);
+
     float V1 = get_pixel(im, x1, y1, c);
     float V2 = get_pixel(im, x2, y1, c);
     float V3 = get_pixel(im, x1, y2, c);
@@ -93,52 +66,26 @@ float bilinear_interpolate(image im, float x, float y, int c)
     float d3 = y - y1;
     float d4 = y2 - y;
 
-    float A1 = d2*d4;
-    float A2 = d1*d4;
-    float A3 = d2*d3;
-    float A4 = d1*d3;
-    
-    float q = V1*A1 + V2*A2 + V3*A3 + V4*A4;
+    float A1 = d2 * d4;
+    float A2 = d1 * d4;
+    float A3 = d2 * d3;
+    float A4 = d1 * d3;
+
+    float q = (V1 * A1) + (V2 * A2) + (V3 * A3) + (V4 * A4);
+
     return q;
 }
+
 
 image bilinear_resize(image im, int w, int h)
 {
     image resized_img = make_image(w, h, im.c);
-    // float ax = (float)im.w/w;
-    // float bx = 0.5*ax - 0.5;
-    // float ay = (float)im.h/h;
 
-    // Buat mengecek nilai input lebih besar dari image atau nggak
-    float ratio_x = 0.0;
-    float ratio_y = 0.0;
-    // if (w < im.w)
-    // {
-    //     ratio_x = (float)im.w / w;
-    // }
-    // else
-    // {
-    //     ratio_x = (float)w / im.w;
-    // }
-
-    // if (h < im.h)
-    // {
-    //     ratio_y = (float)im.h / h;
-    // }
-    // else
-    // {
-    //     ratio_y = (float)h / im.h;
-    // }
+    float ratio_x = (float)im.w / w;
+    float ratio_y = (float)im.h / h;
 
     float bx = 0.5 * ratio_x - 0.5;
     float by = 0.5 * ratio_y - 0.5;
-
-    ratio_x = (float)im.w / w;
-    ratio_y = (float)im.h / h;
-
-    // printf("resize: (%d, %d) -> (%d, %d)\n", im.w, im.h, w, h);
-    // printf("ratio x: %f\n", ratio_x);
-    // printf("ratio y: %f\n", ratio_y);
 
     for (int c = 0; c < im.c; ++c)
     {
@@ -148,7 +95,7 @@ image bilinear_resize(image im, int w, int h)
             {
                 float interpolasi_x = ratio_x * x + bx;
                 float interpolasi_y = ratio_y * y + by;
-                set_pixel(resized_img, y, x, c, nn_interpolate(im, interpolasi_x, interpolasi_y, c));
+                set_pixel(resized_img, x, y, c, bilinear_interpolate(im, interpolasi_x, interpolasi_y, c));
             }
         }
     }

@@ -341,6 +341,7 @@ void test_gaussian_filter(){
     }
 
     image gt = load_image("figs/gaussian_filter_7.png");
+    // save_image(f, "anjay_bisa");
     TEST(same_image(f, gt, EPS));
     free_image(f);
     free_image(gt);
@@ -411,10 +412,12 @@ void test_sobel(){
     image mag = res[0];
     image theta = res[1];
     feature_normalize2(mag);
-    feature_normalize2(theta);
+    feature_normalize2(theta);  
 
     image gt_mag = load_image("figs/magnitude.png");
     image gt_theta = load_image("figs/theta.png");
+    
+    
     TEST(gt_mag.w == mag.w && gt_theta.w == theta.w);
     TEST(gt_mag.h == mag.h && gt_theta.h == theta.h);
     TEST(gt_mag.c == mag.c && gt_theta.c == theta.c);
@@ -762,6 +765,7 @@ void make_hw4_tests()
 }
 void test_integral_image()
 {
+    printf("test_integral_image\n");
     image dots = load_image("data/dots.png");
     image intdot = make_integral_image(dots);
     image intdot_t = load_image_binary("data/dotsintegral.bin");
@@ -771,19 +775,24 @@ void test_integral_image()
     image intdog = make_integral_image(dog);
     image intdog_t = load_image_binary("data/dogintegral.bin");
     TEST(same_image(intdog, intdog_t, .6));
+    printf("test_integral_image - done\n");
 }
 void test_exact_box_filter_image()
 {
+    printf("test_exact_box_filter_image\n");
     image dog = load_image("data/dog.jpg");
     image smooth = box_filter_image(dog, 15);
+    save_image(smooth, "dog_smooth");
     image smooth_t = load_image("data/dogbox.png");
-    //printf("avg origin difference test: %f\n", avg_diff(smooth, dog));
-    //printf("avg smooth difference test: %f\n", avg_diff(smooth, smooth_t));
-    TEST(same_image(smooth, smooth_t, EPS*2));
+    printf("avg origin difference test: %f\n", avg_diff(smooth, dog));
+    printf("avg smooth difference test: %f\n", avg_diff(smooth, smooth_t));
+    TEST(same_image(smooth, smooth_t, EPS));
+    printf("test_exact_box_filter_image - done\n");
 }
 
 void test_good_enough_box_filter_image()
 {
+    printf("test_good_enough_box_filter_image\n");
     image dog = load_image("data/dog.jpg");
     image smooth = box_filter_image(dog, 15);
     image smooth_c = center_crop(smooth);
@@ -791,21 +800,26 @@ void test_good_enough_box_filter_image()
     printf("avg origin difference test: %f\n", avg_diff(smooth_c, center_crop(dog)));
     printf("avg smooth difference test: %f\n", avg_diff(smooth_c, smooth_t));
     TEST(same_image(smooth_c, smooth_t, EPS*2));
+    printf("test_good_enough_box_filter_image - done\n");
 }
 void test_structure_image()
 {
+    printf("test_structure_image\n");
     image doga = load_image("data/dog_a_small.jpg");
     image dogb = load_image("data/dog_b_small.jpg");
     image structure = time_structure_matrix(dogb, doga, 15);
     image structure_t = load_image_binary("data/structure.bin");
     TEST(same_image(center_crop(structure), center_crop(structure_t), EPS));
+    printf("test_structure_image - done\n");
 }
 void test_velocity_image()
 {
+    printf("test_velocity_image\n");
     image structure = load_image_binary("data/structure.bin");
     image velocity = velocity_image(structure, 5);
     image velocity_t = load_image_binary("data/velocity.bin");
     TEST(same_image(velocity, velocity_t, EPS));
+    printf("test_velocity_image - done\n");
 }
 void test_hw4()
 {
