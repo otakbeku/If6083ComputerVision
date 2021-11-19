@@ -10,23 +10,48 @@
 void activate_matrix(matrix m, ACTIVATION a)
 {
     int i, j;
-    for(i = 0; i < m.rows; ++i){
+    for (i = 0; i < m.rows; ++i)
+    {
         double sum = 0;
-        for(j = 0; j < m.cols; ++j){
+        for (j = 0; j < m.cols; ++j)
+        {
             double x = m.data[i][j];
-            if(a == LOGISTIC){
+            if (a == LOGISTIC)
+            {
                 // TODO
-            } else if (a == RELU){
+                m.data[i][j] = 1.0 / (1 + exp(-x));
+            }
+            else if (a == RELU)
+            {
                 // TODO
-            } else if (a == LRELU){
+                m.data[i][j] = fmax(0, x);
+            }
+            else if (a == LRELU)
+            {
                 // TODO
-            } else if (a == SOFTMAX){
+                if (x < 0)
+                {
+                    m.data[i][j] = x * 0.1;
+                }
+                else if (x >= 0)
+                {
+                    m.data[i][j] = x;
+                }
+            }
+            else if (a == SOFTMAX)
+            {
                 // TODO
+                m.data[i][j] = exp(x);
             }
             sum += m.data[i][j];
         }
-        if (a == SOFTMAX) {
+        if (a == SOFTMAX)
+        {
             // TODO: have to normalize by sum if we are using SOFTMAX
+            for (j = 0; j < m.cols; ++j)
+            {
+                m.data[i][j] = m.data[i][j] / sum;
+            }
         }
     }
 }
@@ -39,10 +64,53 @@ void activate_matrix(matrix m, ACTIVATION a)
 void gradient_matrix(matrix m, ACTIVATION a, matrix d)
 {
     int i, j;
-    for(i = 0; i < m.rows; ++i){
-        for(j = 0; j < m.cols; ++j){
+    for (i = 0; i < m.rows; ++i)
+    {
+        for (j = 0; j < m.cols; ++j)
+        {
             double x = m.data[i][j];
             // TODO: multiply the correct element of d by the gradient
+            if (a == LOGISTIC)
+            {
+                // TODO
+                d.data[i][j] *= x * (1 - x);
+            }
+            else if (a == RELU)
+            {
+                // TODO
+                // int nice = 1;
+                // printf("=======\n");
+                // printf("x: %f\n", x);
+                // nice *= x > 0 ? 1 : 0;
+                // printf("nice: %f\n", nice);
+                // printf("d-1: %f\n", d.data[i][j]);
+                d.data[i][j] *= x > 0 ? 1 : 0;
+                // printf("d-2: %f\n", d.data[i][j]);
+
+                // this is not working
+                // if (x > 0)
+                // {
+                //     d.data[i][j] *= x;
+                // }
+                // else if (x < 0)
+                // {
+                //     d.data[i][j] *= 0;
+                // }
+            }
+            else if (a == LRELU)
+            {
+                // TODO
+                // if (x < 0)
+                // {
+                //     d.data[i][j] = 0.1*x;
+                // }
+                // else if (x >= 0)
+                // {
+                //     d.data[i][j] = x;
+                // }
+                // why this is working?
+                d.data[i][j] *= x > 0 ? 1 : 0.1;
+            }
         }
     }
 }
@@ -54,15 +122,15 @@ void gradient_matrix(matrix m, ACTIVATION a, matrix d)
 matrix forward_layer(layer *l, matrix in)
 {
 
-    l->in = in;  // Save the input for backpropagation
-
+    l->in = in; // Save the input for backpropagation
 
     // TODO: fix this! multiply input by weights and apply activation function.
     matrix out = make_matrix(in.rows, l->w.cols);
+    out = matrix_mult_matrix(l->in, l->w);
+    activate_matrix(out, l->activation);
 
-
-    free_matrix(l->out);// free the old output
-    l->out = out;       // Save the current output for gradient calculation
+    free_matrix(l->out); // free the old output
+    l->out = out;        // Save the current output for gradient calculation
     return out;
 }
 
@@ -75,18 +143,22 @@ matrix backward_layer(layer *l, matrix delta)
     // 1.4.1
     // delta is dL/dy
     // TODO: modify it in place to be dL/d(xw)
-
+    gradient_matrix(l->out, l->activation, delta);
 
     // 1.4.2
     // TODO: then calculate dL/dw and save it in l->dw
     free_matrix(l->dw);
-    matrix dw = make_matrix(l->w.rows, l->w.cols); // replace this
+    // matrix dw = make_matrix(l->w.rows, l->w.cols); // replace this
+    matrix xt = transpose_matrix(l->in);
+    matrix dw = matrix_mult_matrix(xt, delta);
     l->dw = dw;
 
-    
     // 1.4.3
     // TODO: finally, calculate dL/dx and return it.
-    matrix dx = make_matrix(l->in.rows, l->in.cols); // replace this
+    // matrix dx = make_matrix(l->in.rows, l->in.cols); // replace this
+    matrix wt = transpose_matrix(l->w);
+    matrix dx = matrix_mult_matrix(delta, wt);
+    free_matrix(wt);
 
     return dx;
 }
@@ -101,13 +173,20 @@ void update_layer(layer *l, double rate, double momentum, double decay)
     // TODO:
     // Calculate Δw_t = dL/dw_t - λw_t + mΔw_{t-1}
     // save it to l->v
-
+    // Hitung L2 regularization dulu
+    matrix weight_decay = axpy_matrix(-decay, l->w, l->dw);
+    weight_decay = axpy_matrix(momentum, l->v, weight_decay);
+    free_matrix(l->v);
+    l->v = weight_decay;
 
     // Update l->w
-
+    matrix next_w = axpy_matrix(rate, weight_decay, l->w);
+    free_matrix(l->w);
+    l->w = next_w;    
+    // Jangan dihapus
+    // free_matrix(weight_decay);
 
     // Remember to free any intermediate results to avoid memory leaks
-
 }
 
 // Make a new layer for our model
@@ -117,11 +196,11 @@ void update_layer(layer *l, double rate, double momentum, double decay)
 layer make_layer(int input, int output, ACTIVATION activation)
 {
     layer l;
-    l.in  = make_matrix(1,1);
-    l.out = make_matrix(1,1);
-    l.w   = random_matrix(input, output, sqrt(2./input));
-    l.v   = make_matrix(input, output);
-    l.dw  = make_matrix(input, output);
+    l.in = make_matrix(1, 1);
+    l.out = make_matrix(1, 1);
+    l.w = random_matrix(input, output, sqrt(2. / input));
+    l.v = make_matrix(input, output);
+    l.dw = make_matrix(input, output);
     l.activation = activation;
     return l;
 }
@@ -133,7 +212,8 @@ layer make_layer(int input, int output, ACTIVATION activation)
 matrix forward_model(model m, matrix X)
 {
     int i;
-    for(i = 0; i < m.n; ++i){
+    for (i = 0; i < m.n; ++i)
+    {
         X = forward_layer(m.layers + i, X);
     }
     return X;
@@ -146,7 +226,8 @@ void backward_model(model m, matrix dL)
 {
     matrix d = copy_matrix(dL);
     int i;
-    for(i = m.n-1; i >= 0; --i){
+    for (i = m.n - 1; i >= 0; --i)
+    {
         matrix prev = backward_layer(m.layers + i, d);
         free_matrix(d);
         d = prev;
@@ -162,7 +243,8 @@ void backward_model(model m, matrix dL)
 void update_model(model m, double rate, double momentum, double decay)
 {
     int i;
-    for(i = 0; i < m.n; ++i){
+    for (i = 0; i < m.n; ++i)
+    {
         update_layer(m.layers + i, rate, momentum, decay);
     }
 }
@@ -173,12 +255,15 @@ void update_model(model m, double rate, double momentum, double decay)
 // returns: index of maximum element
 int max_index(double *a, int n)
 {
-    if(n <= 0) return -1;
+    if (n <= 0)
+        return -1;
     int i;
     int max_i = 0;
     double max = a[0];
-    for (i = 1; i < n; ++i) {
-        if (a[i] > max){
+    for (i = 1; i < n; ++i)
+    {
+        if (a[i] > max)
+        {
             max = a[i];
             max_i = i;
         }
@@ -195,8 +280,10 @@ double accuracy_model(model m, data d)
     matrix p = forward_model(m, d.X);
     int i;
     int correct = 0;
-    for(i = 0; i < d.y.rows; ++i){
-        if(max_index(d.y.data[i], d.y.cols) == max_index(p.data[i], p.cols)) ++correct;
+    for (i = 0; i < d.y.rows; ++i)
+    {
+        if (max_index(d.y.data[i], d.y.cols) == max_index(p.data[i], p.cols))
+            ++correct;
     }
     return (double)correct / d.y.rows;
 }
@@ -209,14 +296,15 @@ double cross_entropy_loss(matrix y, matrix p)
 {
     int i, j;
     double sum = 0;
-    for(i = 0; i < y.rows; ++i){
-        for(j = 0; j < y.cols; ++j){
-            sum += -y.data[i][j]*log(p.data[i][j]);
+    for (i = 0; i < y.rows; ++i)
+    {
+        for (j = 0; j < y.cols; ++j)
+        {
+            sum += -y.data[i][j] * log(p.data[i][j]);
         }
     }
-    return sum/y.rows;
+    return sum / y.rows;
 }
-
 
 // Train a model on a dataset using SGD
 // model m: model to train
@@ -229,20 +317,20 @@ double cross_entropy_loss(matrix y, matrix p)
 void train_model(model m, data d, int batch, int iters, double rate, double momentum, double decay)
 {
     int e;
-    for(e = 0; e < iters; ++e){
+    for (e = 0; e < iters; ++e)
+    {
         data b = random_batch(d, batch);
         matrix p = forward_model(m, b.X);
         fprintf(stderr, "%06d: Loss: %f\n", e, cross_entropy_loss(b.y, p));
         matrix dL = axpy_matrix(-1, p, b.y); // partial derivative of loss dL/dy
         backward_model(m, dL);
-        update_model(m, rate/batch, momentum, decay);
+        update_model(m, rate / batch, momentum, decay);
         free_matrix(dL);
         free_data(b);
     }
 }
 
-
-// Questions 
+// Questions
 //
 // 5.2.2.1 Why might we be interested in both training accuracy and testing accuracy? What do these two numbers tell us about our current model?
 // TODO
@@ -268,6 +356,3 @@ void train_model(model m, data d, int batch, int iters, double rate, double mome
 // 5.3.2.1 How well does your network perform on the CIFAR dataset?
 // TODO
 //
-
-
-
